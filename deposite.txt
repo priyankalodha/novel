@@ -1,0 +1,50 @@
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+using System.Data.OleDb;
+
+
+public partial class _Default : System.Web.UI.Page
+{
+    OleDbConnection cn = new OleDbConnection();
+    OleDbCommand cmd;
+    OleDbDataAdapter da;
+    DataSet ds;
+    OleDbDataReader dr;
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        cn.ConnectionString = "Provider=MSDAORA;User Id=priyanka;Password=priyanka";
+
+
+    }
+    protected void btn_smit_Click(object sender, EventArgs e)
+    {
+         cn.Open();
+        String str = "insert into withdraw values('" + txt_an.Text + "','" + txt_amt.Text + "','" + txt_dt.Text + "')";
+
+
+        try
+        {
+            cmd = new OleDbCommand(str, cn);
+            cmd.ExecuteNonQuery();
+            Response.Write("<Script type=\"text/Javascript\">alert('Records are saved successfully');</Script>");
+        }
+        catch (Exception ex)
+        { }
+        cn.Close();
+    }
+
+    }
+
+   
+

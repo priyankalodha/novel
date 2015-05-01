@@ -1,0 +1,267 @@
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Text;
+using System.Net;
+using System.IO;
+
+public partial class _Default : System.Web.UI.Page
+{
+    string code = string.Empty;
+    private Random rand = new Random();
+    string c;
+    private Size IMAGE_SIZE = new Size(260, 60);
+    private const int GENERATE_IMAGE_COUNT = 3;
+    // string code1 = string.Empty;
+    private Bitmap[] m_EncryptedImages;
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        //            btn_refrsh_Click(sender, e);
+        if (!IsPostBack)
+        {
+            StringBuilder randomText = new StringBuilder();
+            string alphabets = "012345679ACEFGHKLMNPRSWXZabcdefghijkhlmnopqrstuvwxyz";
+            Random r = new Random();
+
+            for (int j = 0; j <= 4; j++)
+            {
+                randomText.Append(alphabets[r.Next(alphabets.Length)]);
+            }
+            c = randomText.ToString();
+            Session["CaptchaCode"] = c;
+
+
+            lblcaptcha.Text = c;
+
+            // CreateCaptchaImage();
+            reg_captcha.ImageUrl = "~/captchgenerate.aspx?New=";
+
+
+            // Code To Split Image
+
+           int regno = Int32.Parse(Session["Regno"].ToString());
+
+
+
+            string captcha = Session["CaptchaCode"].ToString();
+            m_EncryptedImages = SplitImage(captcha);
+            m_EncryptedImages[0].Save(Server.MapPath("~\\split\\" + regno + "_S.jpg"));
+            m_EncryptedImages[1].Save(Server.MapPath("~\\split\\" + regno + "_C.jpg"));
+            m_EncryptedImages[2].Save(Server.MapPath("~\\split\\" + regno + "_RC.jpg"));
+           
+        }
+        //Image1.ImageUrl = Server.MapPath("~\\split\\1_S.jpg");
+
+        //Image2.ImageUrl = Server.MapPath("~\\split\\1_C.jpg");
+
+
+        
+    }
+
+    private Bitmap[] SplitImage(string inputText)
+    {
+        Bitmap finalImage = new Bitmap(IMAGE_SIZE.Width, IMAGE_SIZE.Height);
+        Bitmap tempImage = new Bitmap(IMAGE_SIZE.Width / 2, IMAGE_SIZE.Height);
+        Bitmap[] image = new Bitmap[GENERATE_IMAGE_COUNT];
+
+        Random rand = new Random();
+        SolidBrush brush = new SolidBrush(Color.Red);
+        // Point mid = new Point(IMAGE_SIZE.Width / 2, IMAGE_SIZE.Height / 2);
+
+        Graphics g = Graphics.FromImage(finalImage);
+        Graphics gtemp = Graphics.FromImage(tempImage);
+
+        StringFormat sf = new StringFormat();
+        sf.Alignment = StringAlignment.Center;
+        sf.LineAlignment = StringAlignment.Center;
+        // Font font = new Font("Times New Roman", 60);
+        Color fontColor;
+
+        //g.DrawString(inputText, font, brush, mid, sf);
+        SolidBrush black = new SolidBrush(Color.Black);
+        string code = string.Empty;
+        code = inputText;
+        int counter = 0;
+        for (int i = 0; i < code.Length; i++)
+        {
+            g.DrawString(code[i].ToString(), new Font("Times New Roman", 10 + rand.Next(15, 20), FontStyle.Italic), black, new PointF(20 + counter, 10));
+            counter += 28;
+        }
+
+        gtemp.DrawImage(finalImage, 0, 0, tempImage.Width, tempImage.Height);
+
+
+
+
+
+        for (int i = 0; i < image.Length; i++)
+        {
+            image[i] = new Bitmap(IMAGE_SIZE.Width, IMAGE_SIZE.Height);
+        }
+
+
+        int index = -1;
+        int width = tempImage.Width;
+        int height = tempImage.Height;
+
+        for (int x = 0; x < width; x += 1)
+        {
+            for (int y = 0; y < height; y += 1)
+            {
+                fontColor = tempImage.GetPixel(x, y);
+                index = rand.Next(image.Length);
+                if (fontColor.Name == Color.Empty.Name)
+                {
+                    for (int i = 0; i < image.Length - 1; i++)
+                    {
+
+                        if (index == 0)
+                        {
+                            image[i].SetPixel(x * 2, y, Color.Black);
+                            image[i].SetPixel(x * 2 + 1, y, Color.Empty);
+                        }
+                        else
+                        {
+                            image[i].SetPixel(x * 2, y, Color.Empty);
+                            image[i].SetPixel(x * 2 + 1, y, Color.Black);
+                        }
+                        //////////////
+
+
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < image.Length - 1; i++)
+                    {
+
+                        if ((index + i) % image.Length == 0)
+                        {
+                            image[i].SetPixel(x * 2, y, Color.DarkSlateGray);
+                            image[i].SetPixel(x * 2 + 1, y, Color.Empty);
+                        }
+                        else
+                        {
+                            image[i].SetPixel(x * 2, y, Color.Empty);
+                            image[i].SetPixel(x * 2 + 1, y, Color.DarkViolet);
+                        }
+                        ////////////
+
+
+                    }
+                }
+            }
+        }
+
+        for (int x = 0; x < width; x += 1)
+        {
+            for (int y = 0; y < height; y += 1)
+            {
+                fontColor = tempImage.GetPixel(x, y);
+                index = rand.Next(image.Length);
+                if (fontColor.Name == Color.Empty.Name)
+                {
+
+                    if (index == 0)
+                    {
+                        image[2].SetPixel(x * 2, y, Color.Black);
+                        image[2].SetPixel(x * 2 + 1, y, Color.Empty);
+                    }
+                    else
+                    {
+                        image[2].SetPixel(x * 2, y, Color.Empty);
+                        image[2].SetPixel(x * 2 + 1, y, Color.Black);
+                    }
+
+                }
+
+                else
+                {
+                    image[2].SetPixel(x * 2, y, Color.Red);
+
+                }
+            }
+
+        }
+        brush.Dispose();
+        tempImage.Dispose();
+        finalImage.Dispose();
+
+        return image;
+    }
+
+    protected void btn_download_Click(object sender, EventArgs e)
+    
+    {
+        string ss = "";
+        ss = Session["CaptchaCode"].ToString();
+        if (ss != reg_text.Text)
+        {
+            Response.Write("<Script type=\"text/Javascript\">alert('Captcha does not Match');</Script>");
+            reg_text.Text = "";
+
+            StringBuilder randomText = new StringBuilder();
+            string alphabets = "012345679ACEFGHKLMNPRSWXZabcdefghijkhlmnopqrstuvwxyz";
+            Random r = new Random();
+
+            for (int j = 0; j <= 4; j++)
+            {
+                randomText.Append(alphabets[r.Next(alphabets.Length)]);
+            }
+            c = randomText.ToString();
+            Session["CaptchaCode"] = c;
+
+
+            lblcaptcha.Text = c;
+
+            // CreateCaptchaImage();
+            reg_captcha.ImageUrl = "~/captchgenerate.aspx?New=";
+
+        }
+            // Code To Split Image
+
+            int regno = Int32.Parse(Session["Regno"].ToString());
+
+
+             string captcha = Session["CaptchaCode"].ToString();
+
+            m_EncryptedImages = SplitImage(captcha);
+            m_EncryptedImages[0].Save(Server.MapPath("~\\split\\" + regno + "_S.jpg"));
+            m_EncryptedImages[1].Save(Server.MapPath("~\\split\\" + regno + "_C.jpg"));
+            m_EncryptedImages[2].Save(Server.MapPath("~\\split\\" + regno + "_RC.jpg"));
+            
+            File.Copy(Server.MapPath("~/1.jpg"), Server.MapPath("~/CImgs/") + regno + ".jpg", true);
+            //return;
+        
+        String fname = Session["Regno"].ToString() + "_C.jpg";
+        try
+        {
+            string strURL = "~\\Split\\" + fname;
+            WebClient req = new WebClient();
+            HttpResponse response = HttpContext.Current.Response;
+            response.Clear();
+            response.ClearContent();
+            response.ClearHeaders();
+            response.Buffer = true;
+            response.AddHeader("Content-Disposition", "attachment;filename=" + fname);
+            byte[] data = req.DownloadData(Server.MapPath(strURL));
+            response.BinaryWrite(data);
+            response.End();
+        }
+        catch (Exception ex) { }
+        Response.Redirect("Home.aspx");
+    }
+   
+}

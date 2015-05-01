@@ -1,0 +1,185 @@
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Text;
+using System.IO;
+using System.Security.Cryptography;
+using System.Data.OleDb;
+
+public partial class Default4 : System.Web.UI.Page
+{
+    OleDbConnection connection = new OleDbConnection("Provider=MSDAORA;User Id=priyanka;Password=priyanka");
+
+    OleDbCommand command;
+    OleDbDataAdapter orada;
+
+    string str;
+    DataTable data_table;
+    int RowCount;
+
+    byte[] arr1;
+    byte[] arr2;
+
+    string UserName, Password;
+    public enum CompareResult
+    {
+        ciCompareOk,
+        ciPixelMismatch,
+        ciSizeMismatch
+    };
+    protected void Page_Load(object sender, EventArgs e)
+    {
+
+    }
+    protected void btnShow_Click(object sender, EventArgs e)
+    {
+        string id = "";
+        //string serverstring = "";
+        // string id = "1";
+
+        FileUpload_UserShare.SaveAs(Server.MapPath("~\\1.jpg"));
+        ImgUploadShare.ImageUrl = "~/1.jpg";
+        string UserName = txtUserName.Text.Trim();
+        string Password = txtPassword.Text.Trim();
+
+        //OracleConnection connection = new OracleConnection(strConnString);
+        connection.Open();
+        str = "Select * from registrationdb where USERNAME='" + txtUserName.Text + "' AND PASSWORD='" + txtPassword.Text + "'";
+        command = new OleDbCommand(str);
+        orada = new OleDbDataAdapter(command.CommandText,connection);
+        data_table = new DataTable();
+        orada.Fill(data_table);
+
+        /*
+        for (int i = 0; i < RowCount; i++)
+        {
+            UserName = data_table.Rows[i]["reg_lognm"].ToString();
+            Password = data_table.Rows[i]["reg_pass"].ToString();
+            serverstring = data_table.Rows[i]["REG_CAPSTR"].ToString();
+            id = data_table.Rows[i]["reg_id"].ToString();
+        }
+         
+         */
+        if (data_table.Rows.Count > 0)
+        {
+            //serverstring = data_table.Rows[0]["REG_CAPSTR"].ToString();
+            id = data_table.Rows[0]["REG_NO"].ToString();
+
+
+
+            //txtuserstring.Text = serverstring;
+            arr1 = (File.ReadAllBytes(Server.MapPath("~\\1.jpg")));
+            arr2 = (File.ReadAllBytes(Server.MapPath("~\\Split\\" + id + "_C.jpg")));
+
+            ImageConverter image_converter = new ImageConverter();
+            System.Drawing.Image img = (System.Drawing.Image)image_converter.ConvertFrom(arr1);
+            Bitmap bmp1 = new Bitmap(img);
+            System.Drawing.Image img1 = (System.Drawing.Image)image_converter.ConvertFrom(arr2);
+            Bitmap bmp2 = new Bitmap(img1);
+            if (Compare(bmp1, bmp2) == CompareResult.ciCompareOk)
+            {
+                ImgOrgCShare.ImageUrl = "~/Split/" + id + "_C.jpg";
+                lblresult.Text = "Success!!!";
+
+                // Now Displaying the Server And Client Share
+            }
+            else if (Compare(bmp1, bmp2) == CompareResult.ciPixelMismatch)
+            {
+                lblresult.Visible = true;
+                lblresult.Text = "Pixel not Matching";
+
+
+            }
+            else if (Compare(bmp1, bmp2) == CompareResult.ciSizeMismatch)
+            {
+                lblresult.Visible = true;
+                lblresult.Text = "Size Is Not Same";
+
+            }
+
+        }
+        else
+        {
+            lblresult.Text = "Invalid User Name or Password! Please try again!";
+            // Response.Redirect("Phishingsite.aspx");
+        }
+        org_img.ImageUrl = "~/CImgs/" + id + ".jpg";
+
+    }
+
+    public CompareResult Compare(Bitmap bmp1, Bitmap bmp2)
+    {
+        CompareResult compare_result = CompareResult.ciCompareOk;
+        if (bmp1.Size != bmp2.Size)
+        {
+           compare_result = CompareResult.ciSizeMismatch;
+        }
+        else
+        {
+            ImageConverter image_converter = new ImageConverter();
+            byte[] btImage1 = new byte[1];
+            btImage1 = (byte[])image_converter.ConvertTo(bmp1, btImage1.GetType());
+            byte[] btImage2 = new byte[1];
+            btImage2 = (byte[])image_converter.ConvertTo(bmp2, btImage2.GetType());
+
+            SHA256Managed sm = new SHA256Managed();
+            byte[] hash1 = sm.ComputeHash(btImage1);
+            byte[] hash2 = sm.ComputeHash(btImage2);
+
+            for (int i = 0; i < hash1.Length && i < hash2.Length && compare_result == CompareResult.ciCompareOk; i++)
+            {
+                if (hash1[i] != hash2[i])
+                    compare_result = CompareResult.ciPixelMismatch;
+            }
+            sm.Clear();
+        }
+        return compare_result;
+
+    }
+    protected void Button1_Click(object sender, EventArgs e)
+    {
+        string fileback = Server.MapPath(ImgOrgCShare.ImageUrl);
+        string filefront = Server.MapPath(ImgUploadShare.ImageUrl);
+
+        System.Drawing.Image imageBackground = System.Drawing.Image.FromFile(fileback);
+        System.Drawing.Image imageOverlay = System.Drawing.Image.FromFile(filefront);
+
+        System.Drawing.Image img = new Bitmap(imageBackground.Width, imageBackground.Height);
+        using (Graphics gr = Graphics.FromImage(img))
+        {
+            gr.DrawImage(imageBackground, new Point(0, 0));
+            gr.DrawImage(imageOverlay, new Point(100, 70));
+        }
+        //img.Save("f:\\output.jpg", ImageFormat.Jpeg);
+        img.Save(Server.MapPath("~\\output.jpg"), ImageFormat.Jpeg);
+        Image3.ImageUrl = "~/output.jpg";
+        
+
+    }
+    protected void btnLogin_Click(object sender, EventArgs e)
+    {
+        if (lblresult.Text == "Success!!!")
+            Response.Redirect("bankhome.aspx");
+        else
+        {
+            Response.Write("<script type='javascript'>alert('Invalid login');</script>");
+            lblresult.Text = "Invalid login";
+        }
+    }
+}

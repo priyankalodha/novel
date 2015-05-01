@@ -1,0 +1,70 @@
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+using System.Data.OleDb;
+
+
+public partial class _Default : System.Web.UI.Page
+{
+    OleDbConnection connection = new OleDbConnection();
+    OleDbCommand cammand;
+    OleDbDataAdapter data_adapter;
+    DataSet data_set;
+    OleDbDataReader data_reader;
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        connection.ConnectionString = "Provider=MSDAORA;User Id=priyanka;Password=priyanka";
+
+    }
+  
+    protected void btn_sbmt_Click(object sender, EventArgs e)
+    {
+        connection.Open();
+
+        //code to genarat automatic reg no
+
+        int regno = 0;
+        OleDbDataAdapter data_adapter = new OleDbDataAdapter("select max(reg_no)+1 from registrationdb", connection);
+        DataSet data_set = new DataSet();
+        da.Fill(data_set, "registrationdb");
+        try
+        {
+            if (data_set.Tables[0].Rows.Count > 0)
+            {
+                regno = Int32.Parse(data_set.Tables[0].Rows[0][0].ToString());
+            }
+            else
+                regno = 1;
+        }
+        catch (Exception ex)
+        {
+            regno = 1;
+        }
+        String str = "insert into registrationdb values('" + reg_nm.Text + "','" + reg_addr.Text + "','" + reg_email.Text + "','" + reg_contact.Text + "','" + drp_gndr.Text + "','" + reg_dob.Text + "','" + reg_usrnm.Text + "','" + reg_pass.Text + "'," + regno + ")";
+
+        try
+        {
+            cammand = new OleDbCommand(str, connection);
+            cammand.ExecuteNonQuery();
+            Session.Add("Regno", regno);
+
+            //Response.Write("<Script type=\"text/Javascript\">alert('Recordata_set are saved successfully');</Script>");
+            Response.Redirect("captchenter.aspx");
+        }
+        catch (Exception ex)
+        { }
+        connection.Close();
+
+
+    }
+   
+}
